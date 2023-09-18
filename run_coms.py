@@ -41,9 +41,11 @@ def main(task_name:str, map_to_logits:bool = False):
     if task_name in ["tfbind8", "tfbind10"]:
         particle_lr = 2.0 
         overestimation_limit = 2.0
+        n_gradient_steps = 50
     else:
         particle_lr = 0.05 
         overestimation_limit = 0.5  
+        n_gradient_steps = 50
 
     trainer = ConservativeObjectiveModel(
         forward_model,
@@ -54,6 +56,7 @@ def main(task_name:str, map_to_logits:bool = False):
         particle_lr=particle_lr,
         entropy_coefficient=0.0,
         noise_std=0.0,
+        particle_gradient_steps=n_gradient_steps,
     )
 
     alphas = trainer.launch(train_data_loader, validate_data_loader, epochs=50)
@@ -76,7 +79,7 @@ def main(task_name:str, map_to_logits:bool = False):
             task_dataset.y.max() - task_dataset.y.min()
         )
         print(f"search's starting point score {initial_score}")
-        final_x = trainer.optimize(x[idx], 50)
+        final_x = trainer.optimize(x[idx], steps=n_gradient_steps)
         score = task.predict(
             final_x.view([-1, *input_shape]).detach().cpu().numpy()
         ).item()
